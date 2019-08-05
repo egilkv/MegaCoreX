@@ -112,16 +112,17 @@ void UartClass::_tx_data_empty_irq(void)
 
 // To invoke data empty "interrupt" via a call, use this method
 void UartClass::_poll_tx_data_empty(void) {
-    if ( !(SREG & CPU_I_bm) ) {
-       // Interrupts are disabled globally, so the code here is an ATOMIC_BLOCK
-       // We'll have to poll the "data register empty" flag ourselves.
+    // Note: Testing the SREG I-bit here would only check if interrupts are disabled
+    // globally, and would not establish if this call was via an interrupt of some
+    // description. It is thus better to turn off interrupts globally (using an
+    // ATOMIC BLOCK) for a while and always poll the DRE bits
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
        // Call the handler only if data register is empty and we know the buffer is non-empty
-
+       // by checking the status of the corresponding interrupt enable
        if (((*_hwserial_module).CTRLA & USART_DREIE_bm) && ((*_hwserial_module).STATUS & USART_DREIF_bm)) {
 	  _tx_data_empty_irq();
        }
     }
-    // In case interrupts are enabled, the interrupt routine will be invoked by itself
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
