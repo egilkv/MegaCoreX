@@ -111,7 +111,8 @@ void UartClass::_tx_data_empty_irq(void)
 }
 
 // To invoke data empty "interrupt" via a call, use this method
-void UartClass::_poll_tx_data_empty(void) {
+void UartClass::_poll_tx_data_empty(void) 
+{
     // Note: Testing the SREG I-bit here would only check if interrupts are disabled
     // globally, and would not establish if this call was via an interrupt of some
     // description. It is thus better to turn off interrupts globally (using an
@@ -123,7 +124,7 @@ void UartClass::_poll_tx_data_empty(void) {
        // Note that the re-check of DREIE within the zone is required although it may have
        // been checked earlier.
        if (((*_hwserial_module).CTRLA & USART_DREIE_bm) && ((*_hwserial_module).STATUS & USART_DREIF_bm)) {
-	   _tx_data_empty_irq();
+           _tx_data_empty_irq();
        }
     }
 }
@@ -134,10 +135,10 @@ void UartClass::_poll_tx_data_empty(void) {
 bool UartClass::pins(uint8_t tx, uint8_t rx)
 {
     for (_pin_set = 0; _pin_set < SERIAL_PIN_SETS; ++_pin_set) {
-	if (tx == _hw_set[_pin_set].tx_pin && rx == _hw_set[_pin_set].rx_pin) {
-	    // We are good, this set of pins is supported
-	    return true;
-	}
+        if (tx == _hw_set[_pin_set].tx_pin && rx == _hw_set[_pin_set].rx_pin) {
+            // We are good, this set of pins is supported
+            return true;
+        }
     }
     _pin_set = 0; // Default to standard
     return false;
@@ -149,7 +150,7 @@ void UartClass::begin(unsigned long baud, uint16_t config)
     // without first calling end()
     if(_written) {
         this->end();
-	_written = false;
+        _written = false;
     }
 
     struct UartPinSet *set = &_hw_set[_pin_set];
@@ -164,31 +165,31 @@ void UartClass::begin(unsigned long baud, uint16_t config)
     //Make sure global interrupts are disabled during initialization
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
 
-	// Let PORTMUX point to alternative UART pins as requested
-	PORTMUX.USARTROUTEA = set->mux |
-			      (PORTMUX.USARTROUTEA & ~_hw_set[1].mux);
+        // Let PORTMUX point to alternative UART pins as requested
+        PORTMUX.USARTROUTEA = set->mux |
+                              (PORTMUX.USARTROUTEA & ~_hw_set[1].mux);
 
-	// Set pin state for swapped UART rx pin before we enable receiver
-	pinMode(set->rx_pin, INPUT_PULLUP);
-	digitalWrite(set->tx_pin, HIGH);
+        // Set pin state for swapped UART rx pin before we enable receiver
+        pinMode(set->rx_pin, INPUT_PULLUP);
+        digitalWrite(set->tx_pin, HIGH);
 
-	// Disable CLK2X
-	(*_hwserial_module).CTRLB &= (~USART_RXMODE_CLK2X_gc);
-	(*_hwserial_module).CTRLB |= USART_RXMODE_NORMAL_gc;
+        // Disable CLK2X
+        (*_hwserial_module).CTRLB &= (~USART_RXMODE_CLK2X_gc);
+        (*_hwserial_module).CTRLB |= USART_RXMODE_NORMAL_gc;
 
-	// assign the baud_setting, a.k.a. BAUD (USART Baud Rate Register)
-	(*_hwserial_module).BAUD = (int16_t) baud_setting;
+        // assign the baud_setting, a.k.a. BAUD (USART Baud Rate Register)
+        (*_hwserial_module).BAUD = (int16_t) baud_setting;
 
-	// Set USART mode of operation
-	(*_hwserial_module).CTRLC = config;
+        // Set USART mode of operation
+        (*_hwserial_module).CTRLC = config;
 
-	// Enable transmitter and receiver
-	(*_hwserial_module).CTRLB |= (USART_RXEN_bm | USART_TXEN_bm);
+        // Enable transmitter and receiver
+        (*_hwserial_module).CTRLB |= (USART_RXEN_bm | USART_TXEN_bm);
 
-	(*_hwserial_module).CTRLA |= USART_RXCIE_bm;
+        (*_hwserial_module).CTRLA |= USART_RXCIE_bm;
 
-	// Set pin state for swapped UART tx pins after we enable transmitter
-	pinMode(set->tx_pin, OUTPUT);
+        // Set pin state for swapped UART tx pins after we enable transmitter
+        pinMode(set->tx_pin, OUTPUT);
     }
 
 }
@@ -199,15 +200,15 @@ void UartClass::end()
     flush();
 
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-	// Disable receiver and transmitter as well as the RX complete and
-	// data register empty interrupts.
-	(*_hwserial_module).CTRLB &= ~(USART_RXEN_bm | USART_TXEN_bm);
-	(*_hwserial_module).CTRLA &= ~(USART_RXCIE_bm | USART_DREIE_bm);
+        // Disable receiver and transmitter as well as the RX complete and
+        // data register empty interrupts.
+        (*_hwserial_module).CTRLB &= ~(USART_RXEN_bm | USART_TXEN_bm);
+        (*_hwserial_module).CTRLA &= ~(USART_RXCIE_bm | USART_DREIE_bm);
 
-	// clear any received data (no need for atomic since interrupts are now disabled)
-	_rx_buffer_head = _rx_buffer_tail;
+        // clear any received data (no need for atomic since interrupts are now disabled)
+        _rx_buffer_head = _rx_buffer_tail;
 
-	_written = false;
+        _written = false;
     }
     // Note: Does not change output pins
 }
@@ -216,7 +217,7 @@ int UartClass::available(void)
 {
     int n;
     RX_BUFFER_ATOMIC {
-	n = ((unsigned int)(SERIAL_RX_BUFFER_SIZE + _rx_buffer_head - _rx_buffer_tail)) % SERIAL_RX_BUFFER_SIZE;
+        n = ((unsigned int)(SERIAL_RX_BUFFER_SIZE + _rx_buffer_head - _rx_buffer_tail)) % SERIAL_RX_BUFFER_SIZE;
     }
     return n;
 }
@@ -226,11 +227,11 @@ int UartClass::peek(void)
     int c;
 
     RX_BUFFER_ATOMIC {
-	if (_rx_buffer_head == _rx_buffer_tail) {
-	    c = -1;
-	} else {
-	    c = _rx_buffer[_rx_buffer_tail];
-	}
+        if (_rx_buffer_head == _rx_buffer_tail) {
+            c = -1;
+        } else {
+            c = _rx_buffer[_rx_buffer_tail];
+        }
     }
     return c;
 }
@@ -240,13 +241,13 @@ int UartClass::read(void)
     int c;
 
     RX_BUFFER_ATOMIC {
-	// if the head isn't ahead of the tail, we don't have any characters
-	if (_rx_buffer_head == _rx_buffer_tail) {
-	    c = -1;
-	} else {
-	    c = _rx_buffer[_rx_buffer_tail];
-	    _rx_buffer_tail = (rx_buffer_index_t)(_rx_buffer_tail + 1) % SERIAL_RX_BUFFER_SIZE;
-	}
+        // if the head isn't ahead of the tail, we don't have any characters
+        if (_rx_buffer_head == _rx_buffer_tail) {
+            c = -1;
+        } else {
+            c = _rx_buffer[_rx_buffer_tail];
+            _rx_buffer_tail = (rx_buffer_index_t)(_rx_buffer_tail + 1) % SERIAL_RX_BUFFER_SIZE;
+        }
     }
     return c;
 }
@@ -257,8 +258,8 @@ int UartClass::availableForWrite(void)
     tx_buffer_index_t tail;
 
     TX_BUFFER_ATOMIC {
-	head = _tx_buffer_tail;
-	tail = _tx_buffer_tail;
+        head = _tx_buffer_tail;
+        tail = _tx_buffer_tail;
     }
     if (head >= tail) return SERIAL_TX_BUFFER_SIZE - 1 - head + tail;
     return tail - head - 1;
@@ -276,9 +277,9 @@ void UartClass::flush()
     // Spin until the data-register-empty-interrupt is disabled and TX complete interrupt flag is raised
     while ( ((*_hwserial_module).CTRLA & USART_DREIE_bm) || (!((*_hwserial_module).STATUS & USART_TXCIF_bm)) ) {
 
-	// If interrupts are globally disabled or the and DR empty interrupt is disabled,
-	// poll the "data register empty" interrupt flag to prevent deadlock
-	_poll_tx_data_empty();
+        // If interrupts are globally disabled or the and DR empty interrupt is disabled,
+        // poll the "data register empty" interrupt flag to prevent deadlock
+        _poll_tx_data_empty();
     }
     // If we get here, nothing is queued anymore (DREIE is disabled) and
     // the hardware finished transmission (TXCIF is set).
@@ -287,37 +288,37 @@ void UartClass::flush()
 size_t UartClass::write(uint8_t c)
 {
     for (;;) {
-	// If the buffer and the data register is empty, just write the byte
-	// to the data register and be done. This shortcut helps
-	// significantly improve the effective data rate at high (>
-	// 500kbit/s) bit rates, where interrupt overhead becomes a slowdown.
-	// Note also that USART_DREIE_bm always will be clear if the buffer is
-	// empty.
-	ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-	    if ( !((*_hwserial_module).CTRLA & USART_DREIE_bm) && ((*_hwserial_module).STATUS & USART_DREIF_bm) ) {
-		(*_hwserial_module).TXDATAL = c;
-		(*_hwserial_module).STATUS = USART_TXCIF_bm;
-		_written = true;
-		return 1;
-	    }
+        // If the buffer and the data register is empty, just write the byte
+        // to the data register and be done. This shortcut helps
+        // significantly improve the effective data rate at high (>
+        // 500kbit/s) bit rates, where interrupt overhead becomes a slowdown.
+        // Note also that USART_DREIE_bm always will be clear if the buffer is
+        // empty.
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+            if ( !((*_hwserial_module).CTRLA & USART_DREIE_bm) && ((*_hwserial_module).STATUS & USART_DREIF_bm) ) {
+                (*_hwserial_module).TXDATAL = c;
+                (*_hwserial_module).STATUS = USART_TXCIF_bm;
+                _written = true;
+                return 1;
+            }
 
-	    // ...if we want to reduce the length of the critical zone, we could interrupt it here...
+            // ...if we want to reduce the length of the critical zone, we could interrupt it here...
 
-	    tx_buffer_index_t nexthead = (_tx_buffer_head + 1) % SERIAL_TX_BUFFER_SIZE;
-	    if (nexthead != _tx_buffer_tail) {
-		// There is room in the buffer
-		_tx_buffer[_tx_buffer_head] = c;
-		_tx_buffer_head = nexthead;
-		// Enable data "register empty interrupt" if it was not already
-		(*_hwserial_module).CTRLA |= USART_DREIE_bm;
-		return 1;
-	    }
-	}
+            tx_buffer_index_t nexthead = (_tx_buffer_head + 1) % SERIAL_TX_BUFFER_SIZE;
+            if (nexthead != _tx_buffer_tail) {
+                // There is room in the buffer
+                _tx_buffer[_tx_buffer_head] = c;
+                _tx_buffer_head = nexthead;
+                // Enable data "register empty interrupt" if it was not already
+                (*_hwserial_module).CTRLA |= USART_DREIE_bm;
+                return 1;
+            }
+        }
 
-	// The output buffer is full, so there's nothing else to do than to spin
-	// here waiting for some room in the buffer to become available
-	// Note that USART_DREIE_bm is assumed to be set at this time
-	_poll_tx_data_empty();
+        // The output buffer is full, so there's nothing else to do than to spin
+        // here waiting for some room in the buffer to become available
+        // Note that USART_DREIE_bm is assumed to be set at this time
+        _poll_tx_data_empty();
     }
 }
 
