@@ -2,14 +2,8 @@
 
 An Arduino core for the new megaAVR series!
 
-**TODO:**
-* ~~UART pin swap integration~~ **DONE! use Serial.pins()**
-* Steal 20 MHz accurate timing from MCUdude_corefiles
-* ~~SPI pin swap integration in libraries~~ **DONE! use SPI.pins()**
-* ~~I2C pin swap integration in libraries~~ **DONE! use Wire.pins()**
-* Example (library?) for using the 32.768kHz cystal that can be found on Uno Wifi Rev2 and Curiosity Nano 4809
-* Readme
-  - Need some good intro text at the beginning
+**NOTE:**
+* This fork avoids the entirely unnecessary swap() function and since I find it rather stupid I guess I will retain this fork as long as it exists.
 
 
 # Table of contents
